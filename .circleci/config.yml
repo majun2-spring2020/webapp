@@ -1,0 +1,63 @@
+version: 2.1 # use CircleCI 2.1
+jobs: # a collection of steps
+  pr_check: # runs not using Workflows must have a `pr_check` job as entry point
+    working_directory: ~/mern-starter # directory where steps will run
+    docker: # run the steps with Docker
+      - image: circleci/node:10.16.3 # ...with this image as the primary container; this is where all `steps` will run
+      - image: circleci/mysql:8.0.4
+        command: [--default-authentication-plugin=mysql_native_password]
+        environment:
+          MYSQL_ROOT_PASSWORD: rootpw
+          MYSQL_DATABASE: majun
+          MYSQL_USER: majun
+          MYSQL_PASSWORD: qwer1234
+    steps: # a collection of executable commands
+      - checkout # special step to check out source code to working directory
+      - run:
+          name: update-npm
+          command: 'sudo npm install -g npm@latest'
+      - restore_cache: # special step to restore the dependency cache
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+      - run:
+          name: install-npm-wee
+          command: npm install
+      - save_cache: # special step to save the dependency cache
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+          paths:
+            - ./node_modules
+      - run:
+      # Our primary container isn't MYSQL so run a sleep command until it's ready.
+          name: Waiting for MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for MySQL && exit 1
+      - run:
+          name: Install MySQL CLI; Import dummy data; run an example query
+          command: |
+            sudo apt-get install mysql-client
+            mysql -h 127.0.0.1 -u majun -pqwer1234 --execute="CREATE TABLE \`majun\`.\`user\` ( \`ID\` VARCHAR(40) NOT NULL PRIMARY KEY, \`first_name\` TEXT NOT NULL , \`last_name\` TEXT NOT NULL , \`password\` TEXT NOT NULL , \`email_address\` VARCHAR(100) NOT NULL UNIQUE, \`account_created\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, \`account_updated\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE = InnoDB"
+            mysql -h 127.0.0.1 -u majun -pqwer1234 --execute="CREATE TABLE \`majun\`.\`Bill\` ( \`id\` VARCHAR(40) NOT NULL PRIMARY KEY, \`created_ts\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, \`updated_ts\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, \`owner_id\` VARCHAR(40) NOT NULL , \`vendor\` TEXT NOT NULL , \`bill_date\` DATETIME NOT NULL , \`due_date\` DATETIME NOT NULL , \`amount_due\` DOUBLE NOT NULL , \`categories\` TEXT NOT NULL , \`paymentStatus\` ENUM('paid','due','past_due','no_payment_required') , FOREIGN KEY(owner_id) REFERENCES \`user\`(ID) ON DELETE CASCADE) ENGINE = InnoDB"
+      - run: # run tests 1123123
+          name: test
+          command: npm test
+      - store_artifacts: # special step to save test results as as artifact
+          # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/ 
+          path: test-results.xml
+          prefix: tests
+      - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/ 
+          path: coverage
+          prefix: coverage
+      - store_test_results: # for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: test-results.xml
+      # See https://circleci.com/docs/2.0/deployment-integrations/ for deploy examples
+workflows:
+  version: 2.1
+  build_and_test:
+    jobs:
+      - pr_check
