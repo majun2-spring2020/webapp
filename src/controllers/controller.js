@@ -157,6 +157,7 @@ exports.userUpdate = function (request, response) {
                     }
                     else
                     {
+                        //401
                         response.status(401)
                         response.json()
                         return
