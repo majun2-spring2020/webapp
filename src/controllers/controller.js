@@ -477,7 +477,7 @@ exports.putBill = function (request, response) {
                                 request.body.bill_date=data.rows[0].bill_date;
                             if(request.body.due_date==null || request.body.due_date=='')
                                 request.body.due_date=data.rows[0].due_date;
-                            if(request.body.amount_due==null || request.body.amount_due=='')
+                            if(request.body.amount_due==null || request.body.amount_due=='' || request.body.amount_due <0.01)
                                 request.body.amount_due=data.rows[0].amount_due;
                             if(request.body.paymentStatus=="" ||request.body.paymentStatus==null)
                                 request.body.paymentStatus=data.rows[0].paymentStatus;
