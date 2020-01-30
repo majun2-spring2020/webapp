@@ -10,6 +10,7 @@ var auth = require('basic-auth')
  * Creates a new member 
  * @param {request} {HTTP request object}
  * @param {response} {HTTP response object}
+ * response
  */
 exports.userCreate = function (request, response) {
     var email=request.body.email_address;
@@ -35,14 +36,10 @@ exports.userCreate = function (request, response) {
     var first_name=request.body.first_name;
     var last_name=request.body.last_name; 
     //if successfully query, return is here       
-    const resolve = (list) => {
-        response.status(201);
-        response.json()
-        return
-    };
+    
 
     const sql=`INSERT INTO \`user\` (\`ID\`,\`first_name\`, \`last_name\`, \`password\`, \`email_address\`) VALUES (UUID(),'${first_name}', '${last_name}', '${password}', '${email}');`
-    console.log(sql)
+    // // console.log(sql)
     //find the email existance here
     query(`SELECT * FROM user WHERE email_address='${email}'`).then(function (data) {
         if(data.rows[0]!=undefined)
@@ -53,7 +50,13 @@ exports.userCreate = function (request, response) {
             return;
         }
         //not exist,then create
-        query(sql).then(resolve)
+        query(sql).then(function (data){
+            query(`SELECT * FROM \`user\` WHERE email_address='${email}'`).then(function (data){
+                response.status(201)
+                delete data.rows[0]['password']
+                response.json(data.rows[0]);
+            })
+        })
     }).catch(renderErrorResponse(response));
 };
 
@@ -76,14 +79,14 @@ exports.userGet = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// // console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// // console.log(data.rows[0].password)
                     if(err) {
                         //server error...
                         response.status(400)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// // console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
@@ -145,7 +148,7 @@ exports.userUpdate = function (request, response) {
                     if(res){                        
                         const sql=`UPDATE \`user\` SET \`first_name\`='${first_name}',\`last_name\`='${last_name}',\`password\`='${password}' WHERE \`ID\`='${data.rows[0].ID}'`
                         //access granted begin update
-                        //console.log(sql)
+                        //// console.log(sql)
                         query(sql).then(function(){
                             response.status(204)
                             response.json()
@@ -154,6 +157,7 @@ exports.userUpdate = function (request, response) {
                     }
                     else
                     {
+                        //401
                         response.status(401)
                         response.json()
                         return
@@ -185,14 +189,14 @@ exports.getBills = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// console.log(data.rows[0].password)
                     if(err) {
                         //server error...
                         response.status(400)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
@@ -201,7 +205,7 @@ exports.getBills = function (request, response) {
                             response.status(200)
                             data.rows.forEach(element => {
                                 element.categories=csvToJsonList(element.categories)
-                                console.log(element.categories)
+                                // console.log(element.categories)
                             });
                             
                             response.json(data.rows)
@@ -250,23 +254,33 @@ exports.createBill = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// console.log(data.rows[0].password)
                     if(err) {
                         //server error...
                         response.status(400)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
-                        const sql=`INSERT INTO \`Bill\`(\`id\`, \`owner_id\`, \`vendor\`, \`bill_date\`, \`due_date\`, \`amount_due\`, \`categories\`, \`paymentStatus\`) VALUES (UUID(),'${data.rows[0].ID}','${request.body.vendor}','${request.body.bill_date}','${request.body.due_date}','${request.body.amount_due}','${jsonListToCsv(request.body.categories)}',"${request.body.paymentStatus}")`
-                        console.log(sql)
+                        const uuidv1 = require('uuid/v1');
+                        var newid=uuidv1();
+                        const sql=`INSERT INTO \`Bill\`(\`id\`, \`owner_id\`, \`vendor\`, \`bill_date\`, \`due_date\`, \`amount_due\`, \`categories\`, \`paymentStatus\`) VALUES ('${newid}','${data.rows[0].ID}','${request.body.vendor}','${request.body.bill_date}','${request.body.due_date}','${request.body.amount_due.toFixed(2)}','${jsonListToCsv(request.body.categories)}',"${request.body.paymentStatus}");`
+                        // console.log(sql)
+                        
                         query(sql).then(function (data) {
-                            response.status(201)
-                            response.json()
-                            return
+                            query(`SELECT * FROM Bill WHERE id='${newid}'`).then(function (data){
+                                response.status(201)
+                                data.rows[0].categories=csvToJsonList(data.rows[0].categories)
+                                response.json(data.rows[0])
+                                return
+                            })
+                            
+                            
+                            
+                            
                         }).catch(renderErrorResponse)
                         // response.status(400)
                         // response.json()                    
@@ -308,14 +322,14 @@ exports.getBills = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// console.log(data.rows[0].password)
                     if(err) {
                         //server error...
                         response.status(400)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
@@ -324,7 +338,7 @@ exports.getBills = function (request, response) {
                             response.status(200)
                             data.rows.forEach(element => {
                                 element.categories=csvToJsonList(element.categories)
-                                //console.log(element.categories)
+                                //// console.log(element.categories)
                             });
                             
                             response.json(data.rows)
@@ -367,30 +381,28 @@ exports.getBill = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// console.log(data.rows[0].password)
                     if(err) {
                         //server error...
-                        response.status(400)
+                        response.status(401)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
                         const sql=`SELECT * FROM Bill WHERE owner_id='${data.rows[0].ID}' AND id='${request.params.id}'`
-                        //console.log(sql)
+                        //// console.log(sql)
                         query(sql).then(function (data) {
                             if(data.rows[0]==undefined){
-                                response.status(400);
+                                response.status(404);
                                 response.json();
                                 return;
                             }
                             response.status(200)
-                            data.rows.forEach(element => {
-                                element.categories=csvToJsonList(element.categories)
-                                //console.log(element.categories)
-                            });
+                            data.rows[0].categories=csvToJsonList(data.rows[0].categories)
+                            
                             
                             response.json(data.rows[0])
                         })                      
@@ -422,7 +434,7 @@ exports.getBill = function (request, response) {
 exports.putBill = function (request, response) {
     
     var credentials = auth(request)
-    if(!(request.body.paymentStatus=="paid" || request.body.paymentStatus=="due" || request.body.paymentStatus=="no_payment_required" || request.body.paymentStatus=="past_due")){
+    if(!(request.body.paymentStatus=="paid" || request.body.paymentStatus=="due" || request.body.paymentStatus=="no_payment_required" || request.body.paymentStatus=="past_due" || request.body.paymentStatus=="" ||request.body.paymentStatus==null)){
         
         response.status(400)
         response.json()
@@ -437,14 +449,14 @@ exports.putBill = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// console.log(data.rows[0].password)
                     if(err) {
                         //server error...
                         response.status(400)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
@@ -452,18 +464,41 @@ exports.putBill = function (request, response) {
                         var ticketid=request.params.id
                         const sql=`SELECT * FROM Bill WHERE owner_id='${owner_id}' AND id='${ticketid}'`
                         
-                        //console.log(sql)
+                        //// console.log(sql)
                         query(sql).then(function (data) {
                             if(data.rows[0]==undefined){
-                                response.status(400);
+                                response.status(404);
                                 response.json();
                                 return;
                             }
-                            const sql=`UPDATE \`Bill\` SET \`vendor\`='${request.body.vendor}',\`bill_date\`='${request.body.bill_date}',\`due_date\`='${request.body.due_date}',\`amount_due\`='${request.body.amount_due}',\`categories\`='${jsonListToCsv(request.body.categories)}',\`paymentStatus\`='${request.body.paymentStatus}' WHERE owner_id='${owner_id}' AND id='${ticketid}'`
-                            console.log(sql)
+                            var origindata=data.rows[0];
+                            if(request.body.vendor==null || request.body.vendor=='')
+                                request.body.vendor=data.rows[0].vendor;
+                            if(request.body.bill_date==null || request.body.bill_date=='')
+                                request.body.bill_date=data.rows[0].bill_date;
+                            if(request.body.due_date==null || request.body.due_date=='')
+                                request.body.due_date=data.rows[0].due_date;
+                            if(request.body.amount_due==null || request.body.amount_due=='' || request.body.amount_due <0.01)
+                                request.body.amount_due=data.rows[0].amount_due;
+                            if(request.body.paymentStatus=="" ||request.body.paymentStatus==null)
+                                request.body.paymentStatus=data.rows[0].paymentStatus;
+                            const sql=`UPDATE \`Bill\` SET \`vendor\`='${request.body.vendor}',\`bill_date\`='${request.body.bill_date}',\`due_date\`='${request.body.due_date}',\`amount_due\`=${request.body.amount_due.toFixed(2)},\`categories\`='${jsonListToCsv(request.body.categories)}',\`paymentStatus\`='${request.body.paymentStatus}' WHERE owner_id='${owner_id}' AND id='${ticketid}'`
+                            // console.log(sql)
+                            origindata.vendor=request.body.vendor;
+                            origindata.bill_date=request.body.bill_date;
+                            origindata.due_date=request.body.due_date;
+                            origindata.amount_due=request.body.amount_due.toFixed(2);
+                            origindata.categories=request.body.categories;
+                            origindata.paymentStatus=request.body.paymentStatus;
+                            
                             query(sql).then(function (data) {
-                                response.status(204)                            
-                                response.json()
+                                if(data.err!=null)
+                                {
+                                    response.status(400)
+                                    response.json();
+                                }
+                                response.status(200)                            
+                                response.json(origindata)
                                 return
                             });
                             
@@ -493,8 +528,7 @@ exports.putBill = function (request, response) {
  * @param {request} {HTTP request object}
  * @param {response} {HTTP response object}
  */
-exports.deleteBill = function (request, response) {
-    
+exports.deleteBill = function (request, response) {    
     var credentials = auth(request)
     if (!credentials) {
         response.statusCode = 401
@@ -505,14 +539,14 @@ exports.deleteBill = function (request, response) {
             if(data.rows[0]!=undefined)
             {
                 //user exist
-                //console.log(data.rows[0])
+                //// console.log(data.rows[0])
                 bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //console.log(data.rows[0].password)
+                    //// console.log(data.rows[0].password)
                     if(err) {
                         //server error...
                         response.status(400)
                         response.json()
-                        //console.log('Comparison error: ', err);
+                        //// console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
@@ -520,9 +554,15 @@ exports.deleteBill = function (request, response) {
                         var ticketid=request.params.id
                         const sql=`DELETE FROM \`Bill\` WHERE owner_id='${owner_id}' AND id='${ticketid}'`
                         
-                        //console.log(sql)
+                        //// console.log(sql)
                         query(sql).then(function (data) {
-                            
+                            // console.log(data.rows.affectedRows)
+                            if(data.rows.affectedRows==0)
+                            {
+                                response.status(404);
+                                response.json();
+                                return;
+                            }
                             response.status(204)                            
                             response.json()
                             return
