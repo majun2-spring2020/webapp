@@ -266,7 +266,7 @@ exports.createBill = function (request, response) {
                         //login successfully, return data
                         const uuidv1 = require('uuid/v1');
                         var newid=uuidv1();
-                        const sql=`INSERT INTO \`Bill\`(\`id\`, \`owner_id\`, \`vendor\`, \`bill_date\`, \`due_date\`, \`amount_due\`, \`categories\`, \`paymentStatus\`) VALUES ('${newid}','${data.rows[0].ID}','${request.body.vendor}','${request.body.bill_date}','${request.body.due_date}','${request.body.amount_due}','${jsonListToCsv(request.body.categories)}',"${request.body.paymentStatus}");`
+                        const sql=`INSERT INTO \`Bill\`(\`id\`, \`owner_id\`, \`vendor\`, \`bill_date\`, \`due_date\`, \`amount_due\`, \`categories\`, \`paymentStatus\`) VALUES ('${newid}','${data.rows[0].ID}','${request.body.vendor}','${request.body.bill_date}','${request.body.due_date}','${request.body.amount_due.toFixed(2)}','${jsonListToCsv(request.body.categories)}',"${request.body.paymentStatus}");`
                         console.log(sql)
                         
                         query(sql).then(function (data) {
@@ -481,7 +481,7 @@ exports.putBill = function (request, response) {
                                 request.body.amount_due=data.rows[0].amount_due;
                             if(request.body.paymentStatus=="" ||request.body.paymentStatus==null)
                                 request.body.paymentStatus=data.rows[0].paymentStatus;
-                            const sql=`UPDATE \`Bill\` SET \`vendor\`='${request.body.vendor}',\`bill_date\`='${request.body.bill_date}',\`due_date\`='${request.body.due_date}',\`amount_due\`=${request.body.amount_due},\`categories\`='${jsonListToCsv(request.body.categories)}',\`paymentStatus\`='${request.body.paymentStatus}' WHERE owner_id='${owner_id}' AND id='${ticketid}'`
+                            const sql=`UPDATE \`Bill\` SET \`vendor\`='${request.body.vendor}',\`bill_date\`='${request.body.bill_date}',\`due_date\`='${request.body.due_date}',\`amount_due\`=${request.body.amount_due.toFixed(2)},\`categories\`='${jsonListToCsv(request.body.categories)}',\`paymentStatus\`='${request.body.paymentStatus}' WHERE owner_id='${owner_id}' AND id='${ticketid}'`
                             console.log(sql)
                             origindata.vendor=request.body.vendor;
                             origindata.bill_date=request.body.bill_date;
