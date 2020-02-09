@@ -5,6 +5,7 @@
 'use strict';
 const bcrypt = require('bcrypt');
 const query=require('../services/service');
+const fs=require("fs")
 var auth = require('basic-auth')
 /**
  * Creates a new member 
@@ -587,6 +588,148 @@ exports.deleteBill = function (request, response) {
             }            
         }).catch(renderErrorResponse(response));
     }
+};
+
+/**
+ * Returns a members object in JSON.
+ *
+ * @param {request} {HTTP request object}
+ * @param {response} {HTTP response object}
+ */
+exports.postAttachment = function (request, response) {
+    var formidable = require("formidable")
+    var form = new formidable.IncomingForm();
+    form.maxFieldsSize = 10 * 1024 * 1024; //10 M maxinum
+    form.keepExtensions = true; 
+    form.uploadDir =  './tmp';
+    var file
+    form.parse(request,function(err,fields,file){
+        // get the file
+        var filePath = '';
+        //如果提交文件的form中将上传文件的input名设置为tmpFile，就从tmpFile中取上传文件。否则取for in循环第一个上传的文件。
+        if(file.tmpFile){
+            filePath = file.tmpFile.path;
+        } else {
+            for(var key in file){
+                if( file[key].path && filePath==='' ){
+                    filePath = file[key].path;
+                    break;
+                }
+            }
+        }
+        //文件移动的目录文件夹，不存在时创建目标文件夹
+        var targetDir =  './upload';
+        var fileExt = filePath.substring(filePath.lastIndexOf('.'));
+        //判断文件类型是否允许上传
+        if (('.jpg.jpeg.png.gif').indexOf(fileExt.toLowerCase()) === -1) {
+            var err = new Error('type of file error');
+            response.status(400);
+            response.json("123");
+        } else {
+            //以当前时间戳对上传文件进行重命名
+                        
+            
+            const uuidv1 = require('uuid/v1');
+            var originname=file.files.name
+            //console.log(originname)
+            var newid=uuidv1();
+            var fileName = newid + fileExt;
+
+            var targetFile = targetDir +"/"+ fileName;
+            //console.log(targetFile)
+            
+            var credentials = auth(request)
+            if (!credentials) {
+                response.statusCode = 401
+                response.json();
+            } else {
+                //user existance check
+                query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
+                    if(data.rows[0]!=undefined)
+                    {
+                        //user exist
+                        //// console.log(data.rows[0])
+                        bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
+                            //// console.log(data.rows[0].password)
+                            if(err) {
+                                //server error...
+                                response.status(400)
+                                response.json("312")
+                                //// console.log('Comparison error: ', err);
+                            }
+                            if(res){
+                                //login successfully, return data
+                                
+                                query(`SELECT * FROM Bill WHERE id='${request.params.id}' AND owner_id='${data.rows[0].ID}'`).then(function(data){
+                                    
+                                    if(data.rows[0]!=undefined){
+                                        //bill exists
+                                        
+                                        if(data.rows[0].attachment_id==null){  
+                                            //bill doesnt have attachment                                      
+                                            fs.rename(filePath, targetFile, function (err) {
+                                                if (err) {
+                                                    response.status(400)
+                                                    response.json("2")
+                                                    return
+                                                }
+                                            });
+                                            const sql=`INSERT INTO \`attachment\`(\`id\`, \`file_name\`, \`url\`) VALUES ('${newid}','${originname}','${targetFile}')`
+                                            //console.log(sql)
+                                            
+                                            query(sql).then(function (data) { 
+                                                query(`UPDATE \`Bill\` SET \`attachment_id\`='${newid}' WHERE id='${request.params.id}'`).then(function(data){     query(`SELECT * FROM \`attachment\` WHERE id='${newid}'`).then(function (data){
+                                                        //移动文件   
+                                                                                                        
+                                                        response.status(201)                                                    
+                                                        response.json(data.rows[0])
+                                                        return
+                                                    }).catch(renderErrorResponse)
+                                                }).catch(renderErrorResponse)                                              
+                                                
+                                            }).catch(renderErrorResponse)
+                                        }
+                                        else{
+                                            response.status(400)
+                                            response.json("1") 
+                                            return
+                                        }
+                                                           
+                                        return
+                                    }
+                                    else{
+                                        response.status(404)
+                                        response.json("0")
+                                        return
+                                    }
+
+                                }).catch(renderErrorResponse)
+                            }
+                            else
+                            {
+                                //password wrong
+                                response.status(401)
+                                response.json()
+                                return
+                            }                    
+                        })                
+                        return;
+                    }
+                    else{
+                        response.status(401)
+                        response.json()
+                        return
+                    }            
+                }).catch(renderErrorResponse(response));
+            }
+                    
+        }
+        
+    });
+    
+    //console.log(request.body)
+    
+    
 };
 /**
  * Throws error if error object is present.
