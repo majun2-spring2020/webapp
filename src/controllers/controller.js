@@ -551,26 +551,45 @@ exports.deleteBill = function (request, response) {
                     }
                     if(res){
                         //login successfully, return data
-                        var owner_id=data.rows[0].ID
                         var ticketid=request.params.id
-                        const sql=`DELETE FROM \`Bill\` WHERE owner_id='${owner_id}' AND id='${ticketid}'`
-                        
-                        //// console.log(sql)
-                        query(sql).then(function (data) {
-                            // console.log(data.rows.affectedRows)
-                            if(data.rows.affectedRows==0)
-                            {
+                        var owner_id=data.rows[0].ID
+                        const sql=`SELECT * FROM \`Bill\` WHERE owner_id='${owner_id}' AND id='${ticketid}'`
+                        query(sql).then(function(data){
+                            if(data.rows[0]==undefined){
                                 response.status(404);
                                 response.json();
                                 return;
                             }
-                            response.status(204)                            
-                            response.json()
-                            return
+                            else{
+                                const sql=`SELECT * FROM \`attachment\` WHERE id='${data.rows[0].attachment_id}'`
+                                
+                                query(sql).then(function (data) {
+                                    if(data.rows[0]!=undefined){
+                                        try{
+                                            console.log(data.rows[0].url)
+                                            fs.unlinkSync(`${data.rows[0].url}`)
+                                        }
+                                        catch{
+                                            console.log("no file")
+                                        }
+                                        const sql=`DELETE FROM \`attachment\` WHERE id='${data.rows[0].id}'`
+                                        
+                                        query(sql).then(console.log(sql))
+                                    }
+                                    
+                                    const sql=`DELETE FROM \`Bill\` WHERE id='${ticketid}'`                                
+                                //// console.log(sql)
+                                    query(sql).then(function (data) {
+                                        response.status(204)                            
+                                        response.json()
+                                        return
+                                })      
+                                })
+                                                
+                                return
+                            }
                             
-                            
-                        })                      
-                        return
+                        }).catch(renderErrorResponse)
                     }
                     else
                     {
@@ -731,6 +750,146 @@ exports.postAttachment = function (request, response) {
     
     
 };
+
+/**
+ * Returns a billattachment object in JSON.
+ *
+ * @param {request} {HTTP request object}
+ * @param {response} {HTTP response object}
+ */
+exports.getBillAttachment = function (request, response) {
+    
+    var credentials = auth(request)
+    
+    if (!credentials) {
+        response.statusCode = 401
+        response.json();
+    } else {
+        //user existance check
+        query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
+            if(data.rows[0]!=undefined)
+            {
+                //user exist
+                //// console.log(data.rows[0])
+                bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
+                    //// console.log(data.rows[0].password)
+                    if(err) {
+                        //server error...
+                        response.status(401)
+                        response.json()
+                        //// console.log('Comparison error: ', err);
+                        //
+                    }
+                    if(res){
+                        //login successfully, return data
+                        const sql=`SELECT * FROM attachment WHERE id='${request.params.fileid}' AND id IN( SELECT attachment_id FROM Bill WHERE owner_id='${data.rows[0].ID}' AND id='${request.params.billid}')`
+                        //console.log(sql)
+                        query(sql).then(function (data) {
+                            //console.log(data)
+                            if(data.rows[0]==undefined){
+                                response.status(404);
+                                response.json();
+                                return;
+                            }
+                            else{
+                                response.status(200)                                              
+                                response.json(data.rows[0])
+                                return
+                            }
+                            
+                        }).catch(renderErrorResponse);          
+                                
+                        return
+                    }
+                    else
+                    {
+                        //password wrong
+                        response.status(401)
+                        response.json()
+                        return
+                    }                    
+                })                
+                return;
+            }
+            else{
+                response.status(401)
+                response.json()
+            }            
+        }).catch(renderErrorResponse(response));
+    }
+};
+
+/**
+ * Returns a billattachment object in JSON.
+ *
+ * @param {request} {HTTP request object}
+ * @param {response} {HTTP response object}
+ */
+exports.deleteBillAttachment = function(request, response){
+    
+    var credentials = auth(request)
+    
+    if (!credentials) {
+        response.statusCode = 401
+        response.json();
+    } else {
+        //user existance check
+        query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
+            if(data.rows[0]!=undefined)
+            {
+                //user exist
+                //// console.log(data.rows[0])
+                bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
+                    //// console.log(data.rows[0].password)
+                    if(err) {
+                        //server error...
+                        response.status(401)
+                        response.json()
+                        //// console.log('Comparison error: ', err);
+                        //
+                    }
+                    if(res){
+                        //login successfully, return data
+                        const sql=`SELECT * FROM attachment WHERE id='${request.params.fileid}' AND id IN( SELECT attachment_id FROM Bill WHERE owner_id='${data.rows[0].ID}' AND id='${request.params.billid}')`
+                        console.log(sql)
+                        query(sql).then(function (data) {
+                           
+                            if(data.rows[0]==undefined){
+                                response.status(404);
+                                response.json();
+                                return;
+                            }
+                            else{
+                                fs.unlinkSync(data.rows[0].url);
+                                query(`DELETE FROM attachment WHERE id='${data.rows[0].id}'`).then(function(){
+                                    response.status(204)                                              
+                                    response.json(data.rows[0])
+                                    return
+                                }).catch(renderErrorResponse)                                
+                                return
+                            }
+                            
+                        }).catch(renderErrorResponse);          
+                                
+                        return
+                    }
+                    else
+                    {
+                        //password wrong
+                        response.status(401)
+                        response.json()
+                        return
+                    }                    
+                })                
+                return;
+            }
+            else{
+                response.status(401)
+                response.json()
+            }            
+        }).catch(renderErrorResponse(response));
+    }
+};
 /**
  * Throws error if error object is present.
  *
@@ -748,8 +907,6 @@ let renderErrorResponse = (response) => {
     }
     return errorCallback;
 };
-
-
 //small tools
 let jsonListToCsv=(json)=>{
     var csv = '';
