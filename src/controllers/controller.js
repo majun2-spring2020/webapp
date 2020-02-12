@@ -643,7 +643,7 @@ exports.postAttachment = function (request, response) {
         if (('.jpg.jpeg.png.gif').indexOf(fileExt.toLowerCase()) === -1) {
             var err = new Error('type of file error');
             response.status(400);
-            response.json("123");
+            response.json("");
         } else {
             //以当前时间戳对上传文件进行重命名
                         
@@ -673,7 +673,7 @@ exports.postAttachment = function (request, response) {
                             if(err) {
                                 //server error...
                                 response.status(400)
-                                response.json("312")
+                                response.json("")
                                 //// console.log('Comparison error: ', err);
                             }
                             if(res){
@@ -689,7 +689,7 @@ exports.postAttachment = function (request, response) {
                                             fs.rename(filePath, targetFile, function (err) {
                                                 if (err) {
                                                     response.status(400)
-                                                    response.json("2")
+                                                    response.json("")
                                                     return
                                                 }
                                             });
@@ -710,7 +710,7 @@ exports.postAttachment = function (request, response) {
                                         }
                                         else{
                                             response.status(400)
-                                            response.json("1") 
+                                            response.json("") 
                                             return
                                         }
                                                            
@@ -718,7 +718,7 @@ exports.postAttachment = function (request, response) {
                                     }
                                     else{
                                         response.status(404)
-                                        response.json("0")
+                                        response.json("")
                                         return
                                     }
 
