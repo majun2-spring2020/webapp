@@ -569,7 +569,7 @@ exports.deleteBill = function (request, response) {
                                             console.log(data.rows[0].url)
                                             fs.unlinkSync(`${data.rows[0].url}`)
                                         }
-                                        catch{
+                                        catch(err){
                                             console.log("no file")
                                         }
                                         const sql=`DELETE FROM \`attachment\` WHERE id='${data.rows[0].id}'`
