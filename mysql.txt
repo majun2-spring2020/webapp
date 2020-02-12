@@ -13,6 +13,8 @@ CREATE TABLE `majun`.`Bill` ( `id` VARCHAR(40) NOT NULL PRIMARY KEY, `created_ts
 
 CREATE TABLE `majun`.`attachment` (`id` VARCHAR(40) NOT NULL PRIMARY KEY , `file_name` TEXT NOT NULL , `url` TEXT NOT NULL , `upload_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE = InnoDB
 
+CREATE TABLE `majun`.`attachment` (`id` VARCHAR(40) NOT NULL PRIMARY KEY , `file_name` TEXT NOT NULL , `url` TEXT NOT NULL , `upload_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , `lastModifiedDate` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP , `SIZE` INT NOT NULL DEFAULT 0 , `MD5` TEXT NOT NULL ) ENGINE = InnoDB
+
 
 file_name*	string
 readOnly: true

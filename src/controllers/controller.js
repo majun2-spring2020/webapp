@@ -621,8 +621,10 @@ exports.postAttachment = function (request, response) {
     form.maxFieldsSize = 10 * 1024 * 1024; //10 M maxinum
     form.keepExtensions = true; 
     form.uploadDir =  './tmp';
+    form.hash = 'md5'
     var file
     form.parse(request,function(err,fields,file){
+        //console.log(file);
         // get the file
         var filePath = '';
         //如果提交文件的form中将上传文件的input名设置为tmpFile，就从tmpFile中取上传文件。否则取for in循环第一个上传的文件。
@@ -656,7 +658,9 @@ exports.postAttachment = function (request, response) {
 
             var targetFile = targetDir +"/"+ fileName;
             //console.log(targetFile)
-            
+            var MD5= file.files.hash;
+            var size=file.files.size;
+            var modified=file.files.lastModifiedDate;
             var credentials = auth(request)
             if (!credentials) {
                 response.statusCode = 401
@@ -693,8 +697,8 @@ exports.postAttachment = function (request, response) {
                                                     return
                                                 }
                                             });
-                                            const sql=`INSERT INTO \`attachment\`(\`id\`, \`file_name\`, \`url\`) VALUES ('${newid}','${originname}','${targetFile}')`
-                                            //console.log(sql)
+                                            const sql=`INSERT INTO \`attachment\`(\`id\`, \`file_name\`, \`url\`,\`MD5\`,\`lastModifiedDate\`,\`SIZE\`) VALUES ('${newid}','${originname}','${targetFile}','${MD5}','${modified}','${size}')`
+                                            // console.log(sql)
                                             
                                             query(sql).then(function (data) { 
                                                 query(`UPDATE \`Bill\` SET \`attachment_id\`='${newid}' WHERE id='${request.params.id}'`).then(function(data){     query(`SELECT * FROM \`attachment\` WHERE id='${newid}'`).then(function (data){
