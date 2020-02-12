@@ -17,6 +17,12 @@ module.exports = function (app) {
         .get(controller.getBill)
         .put(controller.putBill)
         .delete(controller.deleteBill)
-        
+    app.route('/v1/bill/:id/file')
+        .post(controller.postAttachment)
+    app.route('/v1/bill/:billid/file/:fileid')
+        .get(controller.getBillAttachment)
+        .delete(controller.deleteBillAttachment)
+    // app.route('/test')
+    //     .post(controller.postAttachment)
     // Routes for get, update.
 };
