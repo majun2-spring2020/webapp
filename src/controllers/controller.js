@@ -623,8 +623,19 @@ exports.postAttachment = function (request, response) {
     form.uploadDir =  './tmp';
     form.hash = 'md5'
     var file
+    console.log(request.file)
     form.parse(request,function(err,fields,file){
-        //console.log(file);
+        if(err){
+            response.status(400);
+            response.json("");
+            return
+        }
+        if(file.files==undefined){
+            response.status(400);
+            response.json("");
+            return
+        }
+        console.log(file);
         // get the file
         var filePath = '';
         //如果提交文件的form中将上传文件的input名设置为tmpFile，就从tmpFile中取上传文件。否则取for in循环第一个上传的文件。
@@ -651,16 +662,17 @@ exports.postAttachment = function (request, response) {
                         
             
             const uuidv1 = require('uuid/v1');
-            var originname=file.files.name
+           
             //console.log(originname)
             var newid=uuidv1();
             var fileName = newid + fileExt;
-
+            
             var targetFile = targetDir +"/"+ fileName;
             //console.log(targetFile)
             var MD5= file.files.hash;
             var size=file.files.size;
             var modified=file.files.lastModifiedDate;
+            var originname=file.files.name
             var credentials = auth(request)
             if (!credentials) {
                 response.statusCode = 401
