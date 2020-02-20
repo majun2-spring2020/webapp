@@ -610,7 +610,7 @@ exports.deleteBill = function (request, response) {
 };
 
 /**
- * Returns a members object in JSON.
+ * Returns a members object in JSON.1
  *
  * @param {request} {HTTP request object}
  * @param {response} {HTTP response object}
