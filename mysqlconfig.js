@@ -22,6 +22,7 @@ module.exports=function(){
                 if(err) throw err
             })
         })
+        console.log("finish")
     })
-    console.log("finish")
+    
 }
