@@ -7,3 +7,9 @@
 # command:
 * npm start
 * npm test
+* argv:
+* * 2:mysql host
+* * 3:mysql user
+* * 4:mysql password
+* * 5:mysql port
+* * 6:mysql database

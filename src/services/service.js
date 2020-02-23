@@ -2,10 +2,11 @@
 var mysql=require("mysql")
 //mysql config
 var pool = mysql.createPool({
-    host: "localhost",
-    user: "majun",
-    password: "qwer1234",
-    database: "majun"
+    host: process.argv[2],
+    user: process.argv[3],
+    password: process.argv[4],
+    port:process.argv[5],
+    database: process.argv[6]
 });
 /**
  * @param sql sentence for mysql
