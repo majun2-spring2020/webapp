@@ -20,6 +20,7 @@
   "homepage": "",
   "devDependencies": {},
   "dependencies": {
+    "aws-sdk": "^2.624.0",
     "basic-auth": "^2.0.1",
     "bcrypt": "^3.0.7",
     "bcryptjs": "^2.4.3",

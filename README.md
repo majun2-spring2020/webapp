@@ -13,3 +13,6 @@
 * * 4:mysql password
 * * 5:mysql port
 * * 6:mysql database
+* * 7:S3    BUCKET
+* * 8:aws   keyid
+* * 9:aws   key
