@@ -7,9 +7,13 @@
 let mysqlconfig=require("./mysqlconfig")
 // init database
 mysqlconfig();
-
-
-
+let fs=require("fs")
+var dir='./tmp'
+if(!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+    
+}
+console.log("tmp ok")
 let express = require('express'),
 app = express(),
 port = process.env.PORT || 3000,
