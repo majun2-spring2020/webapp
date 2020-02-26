@@ -1,11 +1,11 @@
 const mysql=require("mysql")
 var con = mysql.createConnection({
-    host: process.argv[2],
-    user: process.argv[3],
-    password: process.argv[4],
-    port:process.argv[5],
+    host: process.argv[2] || "localhost",
+    user: process.argv[3] || "majun",
+    password: process.argv[4] || "qwer1234",
+    port:process.argv[5] || 3306,
 });
-const database=process.argv[6]
+const database=process.argv[6] || "majun"
 module.exports=function(){
     console.log("bootstrap")
 

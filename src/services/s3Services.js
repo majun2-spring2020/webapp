@@ -1,8 +1,8 @@
 var aws = require('aws-sdk');
 const fs = require("fs")
-var BUCKET = process.argv[7];
-aws.config.accessKeyId= process.argv[8]
-aws.config.secretAccessKey= process.argv[9]
+var BUCKET = process.argv[7] || "";
+aws.config.accessKeyId= process.argv[8] || ""
+aws.config.secretAccessKey= process.argv[9] || ""
 var s3 = new aws.S3();
 exports.delete=function(filename){
     var params = {
