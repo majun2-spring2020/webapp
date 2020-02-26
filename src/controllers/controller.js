@@ -6,6 +6,7 @@
 const bcrypt = require('bcrypt');
 const query=require('../services/service');
 const fs=require("fs")
+const s3File=require("../services/s3Services")
 var auth = require('basic-auth')
 /**
  * Creates a new member 
@@ -567,7 +568,7 @@ exports.deleteBill = function (request, response) {
                                     if(data.rows[0]!=undefined){
                                         try{
                                             console.log(data.rows[0].url)
-                                            fs.unlinkSync(`${data.rows[0].url}`)
+                                            s3File.delete(data.rows[0].url)
                                         }
                                         catch(err){
                                             console.log("no file")
@@ -623,7 +624,7 @@ exports.postAttachment = function (request, response) {
     form.uploadDir =  './tmp';
     form.hash = 'md5'
     var file
-    console.log(request.file)
+    //console.log(request.file)
     form.parse(request,function(err,fields,file){
         if(err){
             response.status(400);
@@ -635,7 +636,7 @@ exports.postAttachment = function (request, response) {
             response.json("");
             return
         }
-        console.log(file);
+        //console.log(file);
         // get the file
         var filePath = '';
         //如果提交文件的form中将上传文件的input名设置为tmpFile，就从tmpFile中取上传文件。否则取for in循环第一个上传的文件。
@@ -701,15 +702,14 @@ exports.postAttachment = function (request, response) {
                                         //bill exists
                                         
                                         if(data.rows[0].attachment_id==null){  
-                                            //bill doesnt have attachment                                      
-                                            fs.rename(filePath, targetFile, function (err) {
-                                                if (err) {
-                                                    response.status(400)
-                                                    response.json("")
-                                                    return
-                                                }
-                                            });
-                                            const sql=`INSERT INTO \`attachment\`(\`id\`, \`file_name\`, \`url\`,\`MD5\`,\`lastModifiedDate\`,\`SIZE\`) VALUES ('${newid}','${originname}','${targetFile}','${MD5}','${modified}','${size}')`
+                                            //bill doesnt have attachment       
+                                            // if(!1){
+                                            //     response.status(400)
+                                            //     response.json()
+                                            //     return
+                                            // } 
+                                            console.log(s3File.upload(filePath,fileName))
+                                            const sql=`INSERT INTO \`attachment\`(\`id\`, \`file_name\`, \`url\`,\`MD5\`,\`lastModifiedDate\`,\`SIZE\`) VALUES ('${newid}','${originname}','${fileName}','${MD5}','${modified}','${size}')`
                                             // console.log(sql)
                                             
                                             query(sql).then(function (data) { 
@@ -876,7 +876,8 @@ exports.deleteBillAttachment = function(request, response){
                                 return;
                             }
                             else{
-                                fs.unlinkSync(data.rows[0].url);
+                                
+                                s3File.delete(data.rows[0].url)
                                 query(`DELETE FROM attachment WHERE id='${data.rows[0].id}'`).then(function(){
                                     response.status(204)                                              
                                     response.json(data.rows[0])

@@ -1,30 +1,19 @@
 /**
  * reference: Teacher a
  */
-let default_user="debian-sys-maint"
-let default_pass=process.argv[2]
-let query_file=process.argv[3]
 /**
- * init database
+ * mysql config
  */
-var mysql = require('mysql');
-
-
-var con = mysql.createConnection({
-  host: "localhost",
-  user: default_user,
-  password: default_pass
-});
-var exec=require('child_process').exec
-exec(`mkdir tmp`)
-exec(`mkdir upload`)
-exec(`mysql -u ${default_user} -p${default_pass} < ${query_file}`,function(err,stdout,stderr){
-    if(err) throw err
+let mysqlconfig=require("./mysqlconfig")
+// init database
+mysqlconfig();
+let fs=require("fs")
+var dir='./tmp'
+if(!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
     
-})
-
-console.log("finish init")
-      
+}
+console.log("tmp ok")
 let express = require('express'),
 app = express(),
 port = process.env.PORT || 3000,
