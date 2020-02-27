@@ -16,7 +16,7 @@ if(!fs.existsSync(dir)){
 console.log("tmp ok")
 let express = require('express'),
 app = express(),
-port = process.env.PORT || 3000,
+port = process.env.APPPort || 3000,
 bodyParser = require('body-parser');
 
 
