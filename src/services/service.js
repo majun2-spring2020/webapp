@@ -2,11 +2,11 @@
 var mysql=require("mysql")
 //mysql config
 var pool = mysql.createPool({
-    host: process.argv[2] || "localhost",
-    user: process.argv[3] || "majun",
-    password: process.argv[4] || "qwer1234",
-    port:process.argv[5] || 3306,
-    database: process.argv[6] || "majun"
+    host: process.env.DBHost || "localhost",
+    user: process.env.DBUser || "majun",
+    password: process.env.DBPassword || "qwer1234",
+    port: process.env.DBport || 3306,
+    database: process.env.DBDatabase || "majun"
 });
 /**
  * @param sql sentence for mysql
