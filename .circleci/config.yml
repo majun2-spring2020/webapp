@@ -61,7 +61,7 @@ jobs: # a collection of steps
       - store_test_results: # for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
           path: test-results.xml
       # See https://circleci.com/docs/2.0/deployment-integrations/ for deploy examples
-  prepare:
+  zipandupload:
     # zip application
     working_directory: ~/mern-starter # directory where steps will run
     machine:
@@ -73,6 +73,7 @@ jobs: # a collection of steps
           command: |
             zip -r csye6225-webapp-${CIRCLE_BUILD_NUM} ./
             ls -al
+            echo $AWS_ACCESS_KEY_ID
 
 
     
@@ -82,7 +83,7 @@ workflows:
   build_deploy:
     jobs:
       - build
-      - prepare:
+      - zipandupload:
           requires:
             - build
       # - deploy_application:
