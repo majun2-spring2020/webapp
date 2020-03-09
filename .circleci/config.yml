@@ -69,10 +69,10 @@ jobs: # a collection of steps
     steps:  
       - checkout    
       - run:
-        name: zip the application
-        command: |
-          zip -r csye6225-webapp-${CIRCLE_BUILD_NUM} ./
-          ls -al
+          name: zip the application
+          command: |
+            zip -r csye6225-webapp-${CIRCLE_BUILD_NUM} ./
+            ls -al
 
 
     
