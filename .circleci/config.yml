@@ -64,16 +64,18 @@ jobs: # a collection of steps
   zipandupload:
     # zip application
     working_directory: ~/mern-starter # directory where steps will run
-    machine:
-      image: ubuntu-1604:201903-01
+    executor: aws-cli/default
     steps:  
-      - checkout    
+      - checkout 
+      - aws-cli/setup:
+          profile-name: default   
       - run:
           name: zip the application
           command: |
             zip -r csye6225-webapp-${CIRCLE_BUILD_NUM} ./
             ls -al
             echo $AWS_ACCESS_KEY_ID
+            aws s3 cp csye6225-webapp-${CIRCLE_BUILD_NUM}.zip csye6225-webapp-${CIRCLE_BUILD_NUM}.zip
 
 
     
