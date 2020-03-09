@@ -1,6 +1,8 @@
 version: 2.1 # use CircleCI 2.1
+orbs:
+  aws-cli: circleci/aws-cli@0.1.13
 jobs: # a collection of steps
-  pr_check: # runs not using Workflows must have a `pr_check` job as entry point
+  build: # runs not using Workflows must have a `pr_check` job as entry point
     working_directory: ~/mern-starter # directory where steps will run
     docker: # run the steps with Docker
       - image: circleci/node:10.16.3 # ...with this image as the primary container; this is where all `steps` will run
@@ -59,8 +61,36 @@ jobs: # a collection of steps
       - store_test_results: # for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
           path: test-results.xml
       # See https://circleci.com/docs/2.0/deployment-integrations/ for deploy examples
+  zipandupload:
+    # zip application
+    working_directory: ~/mern-starter # directory where steps will run
+    machine:
+      image: ubuntu-1604:201903-01
+    steps:  
+      - checkout    
+      - run:
+          name: zip the application
+          command: |
+            zip -r csye6225-webapp-${CIRCLE_BUILD_NUM} ./
+            ls -al
+            echo $AWS_ACCESS_KEY_ID
+            aws s3 cp csye6225-webapp-${CIRCLE_BUILD_NUM}.zip s3://${s3bucket}/csye6225-webapp-${CIRCLE_BUILD_NUM}.zip
+            aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=codedeploy.meepo.me,bundleType=zip,key=csye6225-webapp-${CIRCLE_BUILD_NUM}.zip --region ${AWS_REGION}
+    
+
 workflows:
   version: 2.1
-  build_and_test:
+  build_deploy:
     jobs:
-      - pr_check
+      - build
+      - zipandupload:
+          requires:
+            - build
+      # - deploy_application:
+      #   requires:
+      #   - prepare
+      #   jobs:
+      #   - aws-code-deploy/deploy:
+      #       application-name: csye6225-webapp # The name of an AWS CodeDeploy application associated with the applicable IAM user or AWS account.
+      #       deployment-group: csye6225-webapp-deployment # The name of a new deployment group for the specified application.
+      #       bundle-bucket: codedeploy.meepo.me # The s3 bucket where an application revision will be stored.
