@@ -1,4 +1,6 @@
 version: 2.1 # use CircleCI 2.1
+orbs:
+  aws-cli: circleci/aws-cli@0.1.13
 jobs: # a collection of steps
   build: # runs not using Workflows must have a `pr_check` job as entry point
     working_directory: ~/mern-starter # directory where steps will run
@@ -62,6 +64,8 @@ jobs: # a collection of steps
   prepare:
     # zip application
     working_directory: ~/mern-starter # directory where steps will run
+    machine:
+      image: ubuntu-1604:201903-01
     steps:  
       - checkout    
       - run:
