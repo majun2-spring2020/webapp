@@ -4,6 +4,10 @@ files:
   - source: /
     destination: /webapp
 hooks:
+  BeforInstall:
+    - location: scripts/removeDependencies.sh
+      runas: root
+      timeout: 300
   AfterInstall:
     - location: scripts/npm-install.sh
       runas: root
