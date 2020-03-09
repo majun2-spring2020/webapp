@@ -83,8 +83,8 @@ workflows:
     jobs:
       - build
       - prepare:
-        require:
-        - build
+          require:
+            - build
       # - deploy_application:
       #   requires:
       #   - prepare
