@@ -1,5 +1,5 @@
 #!/bin/bash
 rm -rf /webapp
-cp /webapp-install /webapp
+cp -r /webapp-install /webapp
 cd /webapp
 npm install
