@@ -5,15 +5,15 @@
  * mysql config
  */
 let mysqlconfig=require("./mysqlconfig")
+const logger=require("./src/log/logcontroller")
 // init database
 mysqlconfig();
 let fs=require("fs")
 var dir='./tmp'
 if(!fs.existsSync(dir)){
-    fs.mkdirSync(dir);
-    
+    fs.mkdirSync(dir);    
 }
-console.log("tmp ok")
+logger.debug("tmp ok")
 let express = require('express'),
 app = express(),
 port = process.env.APPPort || 3000,
@@ -38,6 +38,10 @@ let initApp = require('./src/app');
 initApp(app);
 
 
-console.log('server started on: ' + port);
-
-module.exports = app.listen(port);
+logger.debug('server started on: ' + port);
+try{
+    module.exports = app.listen(port);
+}
+catch(err){
+    logger.error(err)
+}

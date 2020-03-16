@@ -12,11 +12,13 @@ var pool = mysql.createPool({
  * @param sql sentence for mysql
  * @returns promise for sql query
  */
+const logger=require("../log/logcontroller")
 module.exports=function (sql) {
     return new Promise(function (resolve, reject) {
         pool.getConnection(function(err,conn){
             if(err){
-                reject(err);
+                logger.error(err)
+                reject(err);                
             }else{
                 conn.query(sql,function(err,rows,fields){
                     //release the connection

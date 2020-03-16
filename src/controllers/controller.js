@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const query=require('../services/service');
 const fs=require("fs")
 const s3File=require("../services/s3Services")
+const logger=require("../log/logcontroller")
 var auth = require('basic-auth')
 /**
  * Creates a new member 
@@ -20,6 +21,7 @@ exports.userCreate = function (request, response) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if(!re.test(String(email).toLowerCase()))
     {
+        
         response.status(400);
         response.json();
         return 
@@ -916,6 +918,7 @@ exports.deleteBillAttachment = function(request, response){
 let renderErrorResponse = (response) => {
     const errorCallback = (error) => {
         if (error) {
+            logger.error(error.message)
             response.status(500);
             response.json({
                 message: error.message

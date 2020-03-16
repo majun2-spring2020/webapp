@@ -4,6 +4,7 @@ var BUCKET = process.env.S3BucketName || "";
 aws.config.accessKeyId= process.env.AWSAccessKey || ""
 aws.config.secretAccessKey= process.env.AWSAccessKeyId || ""
 var s3 = new aws.S3();
+const logger=require("../log/logcontroller")
 exports.delete=function(filename){
     var params = {
         Bucket: BUCKET, 
@@ -17,7 +18,8 @@ exports.delete=function(filename){
     }
     re=s3.deleteObjects(params, function(err, data) {
         if (err) {
-            return false
+          logger.error(err)
+          return false
         } // an error occurred
         else    
             return true           // successful response
@@ -34,6 +36,7 @@ exports.upload=function(filetmppath,filename){
     re=s3.upload(params, function (err, data) {
         //handle error
         if (err) {
+          logger.error(err)
           return false
         }        
         //success
