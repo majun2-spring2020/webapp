@@ -5,7 +5,7 @@ files:
     destination: /webapp-install
 hooks:
   BeforeInstall:
-    - location: scriptes/npm-stop.sh
+    - location: scripts/npm-stop.sh
       runas: root
       timeout: 60
   AfterInstall:
