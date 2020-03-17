@@ -1,5 +1,6 @@
 //this file is operation for mysql
 var mysql=require("mysql")
+var client=require("../log/statsd")
 //mysql config
 var pool = mysql.createPool({
     host: process.env.DBHost || "localhost",

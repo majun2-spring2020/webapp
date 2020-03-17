@@ -4,6 +4,7 @@ var BUCKET = process.env.S3BucketName || "";
 aws.config.accessKeyId= process.env.AWSAccessKey || ""
 aws.config.secretAccessKey= process.env.AWSAccessKeyId || ""
 var s3 = new aws.S3();
+var client=require("../log/statsd")
 const logger=require("../log/logcontroller")
 exports.delete=function(filename){
     var start=new Date().getTime();
