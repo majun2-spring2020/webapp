@@ -8,6 +8,7 @@ const query=require('../services/service');
 const fs=require("fs")
 const s3File=require("../services/s3Services")
 const logger=require("../log/logcontroller")
+const client=require("../log/statsd")
 var auth = require('basic-auth')
 /**
  * Creates a new member 
@@ -16,6 +17,7 @@ var auth = require('basic-auth')
  * response
  */
 exports.userCreate = function (request, response) {
+    client.timing('response_time', 42);
     var email=request.body.email_address;
     //regular check for email address
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
