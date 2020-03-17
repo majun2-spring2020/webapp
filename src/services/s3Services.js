@@ -6,6 +6,7 @@ aws.config.secretAccessKey= process.env.AWSAccessKeyId || ""
 var s3 = new aws.S3();
 const logger=require("../log/logcontroller")
 exports.delete=function(filename){
+    var start=new Date().getTime();
     var params = {
         Bucket: BUCKET, 
         Delete: { // required
@@ -24,10 +25,13 @@ exports.delete=function(filename){
         else    
             return true           // successful response
     });
+    var total=new Date().getTime()-start;
+    client.timing('S3DeleteCall', total);
     return re
 }
 
 exports.upload=function(filetmppath,filename){
+    var start=new Date().getTime();
     var params = {
         Bucket: BUCKET,
         Body : fs.createReadStream(filetmppath),
@@ -42,6 +46,8 @@ exports.upload=function(filetmppath,filename){
         //success
         return true    
     })
+    var total=new Date().getTime()-start;
+    client.timing('S3UploadCall', total);
     return re
 
 }

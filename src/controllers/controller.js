@@ -17,6 +17,7 @@ var auth = require('basic-auth')
  * response
  */
 exports.userCreate = function (request, response) {
+    client.increment('userCreateCall');
     var start=new Date().getTime();
     var email=request.body.email_address;
     //regular check for email address
@@ -82,6 +83,7 @@ exports.userCreate = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.userGet = function (request, response) {
+    client.increment('userGetCall');
     var start=new Date().getTime();
     var credentials = auth(request)
 
@@ -147,6 +149,7 @@ exports.userGet = function (request, response) {
  */
 exports.userUpdate = function (request, response) {
     //seperate parameters
+    client.increment('userUpdateCall');
     var start=new Date().getTime();
     var strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})");
     if(!strongRegex.test(String(request.body.password)))
@@ -221,6 +224,7 @@ exports.userUpdate = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.getBills = function (request, response) {
+    client.increment('getBillsCall');
     var start=new Date().getTime();
     var credentials = auth(request)
     
@@ -292,6 +296,7 @@ exports.getBills = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.createBill = function (request, response) {
+    client.increment('createBillCall');
     var start=new Date().getTime();
     var credentials = auth(request)
     
@@ -378,79 +383,8 @@ exports.createBill = function (request, response) {
  * @param {request} {HTTP request object}
  * @param {response} {HTTP response object}
  */
-exports.getBills = function (request, response) {
-    var start=new Date().getTime();
-    var credentials = auth(request)
-    
-    if (!credentials) {
-        response.statusCode = 401
-        response.json();
-        var total=new Date().getTime()-start;
-        client.timing('getBills_fail', total);
-        return
-    } else {
-        //user existance check
-        query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
-            if(data.rows[0]!=undefined)
-            {
-                //user exist
-                //// console.log(data.rows[0])
-                bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //// console.log(data.rows[0].password)
-                    if(err) {
-                        //server error...
-                        response.status(400)
-                        response.json()
-                        var total=new Date().getTime()-start;
-                        client.timing('getBills_fail', total);
-                        return
-                        //// console.log('Comparison error: ', err);
-                    }
-                    if(res){
-                        //login successfully, return data
-                        
-                        query(`SELECT * FROM Bill WHERE owner_id='${data.rows[0].ID}'`).then(function (data) {
-                            response.status(200)
-                            data.rows.forEach(element => {
-                                element.categories=csvToJsonList(element.categories)
-                                //// console.log(element.categories)
-                            });
-                            
-                            response.json(data.rows)
-                            var total=new Date().getTime()-start;
-                            client.timing('getBills_success', total);
-                            return
-                        })                      
-                        return
-                    }
-                    else
-                    {
-                        //password wrong
-                        response.status(401)
-                        response.json()
-                        var total=new Date().getTime()-start;
-                        client.timing('getBills_fail', total);
-                        return
-                    }                    
-                })                
-                return;
-            }
-            else{
-                response.status(401)
-                response.json()
-                var total=new Date().getTime()-start;
-                client.timing('getBills_fail', total);
-            }            
-        }).catch(renderErrorResponse(response));
-    }
-};
-/**
- * Returns a members object in JSON.
- *
- * @param {request} {HTTP request object}
- * @param {response} {HTTP response object}
- */
 exports.getBill = function (request, response) {
+    client.increment('getBillCall');
     var start=new Date().getTime()
     var credentials = auth(request)
     
@@ -528,6 +462,7 @@ exports.getBill = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.putBill = function (request, response) {
+    client.increment('putBillCall');
     var start=new Date().getTime()
     var credentials = auth(request)
     if(!(request.body.paymentStatus=="paid" || request.body.paymentStatus=="due" || request.body.paymentStatus=="no_payment_required" || request.body.paymentStatus=="past_due" || request.body.paymentStatus=="" ||request.body.paymentStatus==null)){
@@ -643,6 +578,7 @@ exports.putBill = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.deleteBill = function (request, response) {    
+    client.increment('deleteBillCall');
     var start=new Date().getTime()
     var credentials = auth(request)
     if (!credentials) {
@@ -745,6 +681,7 @@ exports.deleteBill = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.postAttachment = function (request, response) {
+    client.increment('postAttachmentCall');
     var start=new Date().getTime()
     var formidable = require("formidable")
     var form = new formidable.IncomingForm();
@@ -925,6 +862,7 @@ exports.postAttachment = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.getBillAttachment = function (request, response) {
+    client.increment('getBillAttachmentCall');
     var start=new Date().getTime()
     var credentials = auth(request)
     
@@ -1007,6 +945,7 @@ exports.getBillAttachment = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.deleteBillAttachment = function(request, response){
+    client.increment('deleteBillAttachmentCall');
     var start=new Date().getTime();
 
     var credentials = auth(request)

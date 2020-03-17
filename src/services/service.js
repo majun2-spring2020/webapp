@@ -14,6 +14,8 @@ var pool = mysql.createPool({
  */
 const logger=require("../log/logcontroller")
 module.exports=function (sql) {
+    var start=new Date().getTime()
+
     return new Promise(function (resolve, reject) {
         pool.getConnection(function(err,conn){
             if(err){
@@ -24,6 +26,8 @@ module.exports=function (sql) {
                     //release the connection
                     conn.release();
                     //for promise callback
+                    var total=new Date().getTime()-start;
+                    client.timing('sqlTime', total);
                     resolve({"err":err,
                             "rows":rows,
                             "fields":fields});
