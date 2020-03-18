@@ -7,6 +7,8 @@ const bcrypt = require('bcrypt');
 const query=require('../services/service');
 const fs=require("fs")
 const s3File=require("../services/s3Services")
+const logger=require("../log/logcontroller")
+const client=require("../log/statsd")
 var auth = require('basic-auth')
 /**
  * Creates a new member 
@@ -15,13 +17,18 @@ var auth = require('basic-auth')
  * response
  */
 exports.userCreate = function (request, response) {
+    client.increment('userCreateCall');
+    var start=new Date().getTime();
     var email=request.body.email_address;
     //regular check for email address
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if(!re.test(String(email).toLowerCase()))
     {
+        
         response.status(400);
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('userCreate_fail', total);
         return 
     }
     //password check
@@ -30,6 +37,8 @@ exports.userCreate = function (request, response) {
     {
         response.status(400);
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('userCreate_fail', total);
         return
     }
     //encodeing the password
@@ -49,6 +58,8 @@ exports.userCreate = function (request, response) {
             //exist, return 400
             response.status(400)
             response.json();
+            var total=new Date().getTime()-start;
+            client.timing('userCreate_fail', total);
             return;
         }
         //not exist,then create
@@ -57,6 +68,9 @@ exports.userCreate = function (request, response) {
                 response.status(201)
                 delete data.rows[0]['password']
                 response.json(data.rows[0]);
+                var total=new Date().getTime()-start;
+                client.timing('userCreate_success', total);
+                return;
             })
         })
     }).catch(renderErrorResponse(response));
@@ -69,12 +83,15 @@ exports.userCreate = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.userGet = function (request, response) {
-    
+    client.increment('userGetCall');
+    var start=new Date().getTime();
     var credentials = auth(request)
-    
+
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('userGet_fail', total);
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -88,13 +105,18 @@ exports.userGet = function (request, response) {
                         //server error...
                         response.status(400)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('userGet_fail', total);
+                        return
                         //// // console.log('Comparison error: ', err);
                     }
                     if(res){
                         //login successfully, return data
                         response.status(200)
                         delete data.rows[0]['password'] //delete the password
-                        response.json(data.rows[0])                        
+                        response.json(data.rows[0])     
+                        var total=new Date().getTime()-start;
+                        client.timing('userGet_success', total);                   
                         return
                     }
                     else
@@ -102,6 +124,8 @@ exports.userGet = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('userGet_fail', total);
                         return
                     }                    
                 })                
@@ -110,6 +134,9 @@ exports.userGet = function (request, response) {
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('userGet_fail', total);
+                return
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -122,11 +149,16 @@ exports.userGet = function (request, response) {
  */
 exports.userUpdate = function (request, response) {
     //seperate parameters
+    client.increment('userUpdateCall');
+    var start=new Date().getTime();
     var strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})");
     if(!strongRegex.test(String(request.body.password)))
     {
         response.status(400);
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('userUpdate_fail', total);
+        return
     }
     //encodeing the password
     var password = bcrypt.hashSync(request.body.password, 10);    
@@ -137,6 +169,9 @@ exports.userUpdate = function (request, response) {
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('userUpdate_fail', total);
+        return
     } else {
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
             if(data.rows[0]!=undefined)
@@ -146,6 +181,9 @@ exports.userUpdate = function (request, response) {
                     if(err) {
                         response.status(400)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('userUpdate_fail', total);
+                        return
                     }
                     if(res){                        
                         const sql=`UPDATE \`user\` SET \`first_name\`='${first_name}',\`last_name\`='${last_name}',\`password\`='${password}' WHERE \`ID\`='${data.rows[0].ID}'`
@@ -154,6 +192,9 @@ exports.userUpdate = function (request, response) {
                         query(sql).then(function(){
                             response.status(204)
                             response.json()
+                            var total=new Date().getTime()-start;
+                            client.timing('userUpdate_success', total);
+                            return
                         })
                         return
                     }
@@ -162,6 +203,8 @@ exports.userUpdate = function (request, response) {
                         //401
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('userUpdate_fail', total);
                         return
                     }                    
                 })
@@ -169,6 +212,8 @@ exports.userUpdate = function (request, response) {
             }
             response.status(401)
             response.json()
+            var total=new Date().getTime()-start;
+            client.timing('userUpdate_fail', total);
         }).catch(renderErrorResponse(response));
     }
 };
@@ -179,12 +224,16 @@ exports.userUpdate = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.getBills = function (request, response) {
-    
+    client.increment('getBillsCall');
+    var start=new Date().getTime();
     var credentials = auth(request)
     
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('getBills_fail', total);
+        return
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -198,6 +247,8 @@ exports.getBills = function (request, response) {
                         //server error...
                         response.status(400)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('getBills_fail', total);
                         //// console.log('Comparison error: ', err);
                     }
                     if(res){
@@ -211,6 +262,9 @@ exports.getBills = function (request, response) {
                             });
                             
                             response.json(data.rows)
+                            var total=new Date().getTime()-start;
+                            client.timing('getBills_success', total);
+                            return
                         })                      
                         return
                     }
@@ -219,6 +273,8 @@ exports.getBills = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('getBills_fail', total);
                         return
                     }                    
                 })                
@@ -227,6 +283,9 @@ exports.getBills = function (request, response) {
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('getBills_fail', total);
+                return
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -237,13 +296,16 @@ exports.getBills = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.createBill = function (request, response) {
-    
+    client.increment('createBillCall');
+    var start=new Date().getTime();
     var credentials = auth(request)
     
     if(!(request.body.paymentStatus=="paid" || request.body.paymentStatus=="due" || request.body.paymentStatus=="no_payment_required" || request.body.paymentStatus=="past_due")){
         
         response.status(400)
         response.json()
+        var total=new Date().getTime()-start;
+        client.timing('createBill_fail', total);
         return
     }
 
@@ -263,6 +325,9 @@ exports.createBill = function (request, response) {
                         //server error...
                         response.status(400)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('createBill_fail', total);
+                        return
                         //// console.log('Comparison error: ', err);
                     }
                     if(res){
@@ -277,13 +342,15 @@ exports.createBill = function (request, response) {
                                 response.status(201)
                                 data.rows[0].categories=csvToJsonList(data.rows[0].categories)
                                 response.json(data.rows[0])
+                                var total=new Date().getTime()-start;
+                                client.timing('createBill_success', total);
                                 return
                             })
                             
                             
                             
                             
-                        }).catch(renderErrorResponse)
+                        }).catch(renderErrorResponse(response))
                         // response.status(400)
                         // response.json()                    
                         return
@@ -293,6 +360,8 @@ exports.createBill = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('createBill_fail', total);
                         return
                     }                    
                 })                
@@ -301,65 +370,9 @@ exports.createBill = function (request, response) {
             else{
                 response.status(401)
                 response.json()
-            }            
-        }).catch(renderErrorResponse(response));
-    }
-};
-/**
- * Returns a members object in JSON.
- *
- * @param {request} {HTTP request object}
- * @param {response} {HTTP response object}
- */
-exports.getBills = function (request, response) {
-    
-    var credentials = auth(request)
-    
-    if (!credentials) {
-        response.statusCode = 401
-        response.json();
-    } else {
-        //user existance check
-        query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
-            if(data.rows[0]!=undefined)
-            {
-                //user exist
-                //// console.log(data.rows[0])
-                bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
-                    //// console.log(data.rows[0].password)
-                    if(err) {
-                        //server error...
-                        response.status(400)
-                        response.json()
-                        //// console.log('Comparison error: ', err);
-                    }
-                    if(res){
-                        //login successfully, return data
-                        
-                        query(`SELECT * FROM Bill WHERE owner_id='${data.rows[0].ID}'`).then(function (data) {
-                            response.status(200)
-                            data.rows.forEach(element => {
-                                element.categories=csvToJsonList(element.categories)
-                                //// console.log(element.categories)
-                            });
-                            
-                            response.json(data.rows)
-                        })                      
-                        return
-                    }
-                    else
-                    {
-                        //password wrong
-                        response.status(401)
-                        response.json()
-                        return
-                    }                    
-                })                
-                return;
-            }
-            else{
-                response.status(401)
-                response.json()
+                var total=new Date().getTime()-start;
+                client.timing('createBill_fail', total);
+                return
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -371,12 +384,16 @@ exports.getBills = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.getBill = function (request, response) {
-    
+    client.increment('getBillCall');
+    var start=new Date().getTime()
     var credentials = auth(request)
     
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('getBill_fail', total);
+        return 
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -390,6 +407,9 @@ exports.getBill = function (request, response) {
                         //server error...
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('getBill_fail', total);
+                        return
                         //// console.log('Comparison error: ', err);
                     }
                     if(res){
@@ -400,6 +420,8 @@ exports.getBill = function (request, response) {
                             if(data.rows[0]==undefined){
                                 response.status(404);
                                 response.json();
+                                var total=new Date().getTime()-start;
+                                client.timing('getBill_fail', total);
                                 return;
                             }
                             response.status(200)
@@ -407,6 +429,8 @@ exports.getBill = function (request, response) {
                             
                             
                             response.json(data.rows[0])
+                            var total=new Date().getTime()-start;
+                            client.timing('getBill_success', total);
                         })                      
                         return
                     }
@@ -415,6 +439,8 @@ exports.getBill = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('getBill_fail', total);
                         return
                     }                    
                 })                
@@ -423,6 +449,8 @@ exports.getBill = function (request, response) {
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('getBill_fail', total);
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -434,17 +462,23 @@ exports.getBill = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.putBill = function (request, response) {
-    
+    client.increment('putBillCall');
+    var start=new Date().getTime()
     var credentials = auth(request)
     if(!(request.body.paymentStatus=="paid" || request.body.paymentStatus=="due" || request.body.paymentStatus=="no_payment_required" || request.body.paymentStatus=="past_due" || request.body.paymentStatus=="" ||request.body.paymentStatus==null)){
         
         response.status(400)
         response.json()
+        var total=new Date().getTime()-start;
+        client.timing('putBill_fail', total);
         return
     }
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('putBill_fail', total);
+        return
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -458,6 +492,9 @@ exports.putBill = function (request, response) {
                         //server error...
                         response.status(400)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('putBill_fail', total);
+                        return
                         //// console.log('Comparison error: ', err);
                     }
                     if(res){
@@ -471,6 +508,8 @@ exports.putBill = function (request, response) {
                             if(data.rows[0]==undefined){
                                 response.status(404);
                                 response.json();
+                                var total=new Date().getTime()-start;
+                                client.timing('putBill_fail', total);
                                 return;
                             }
                             var origindata=data.rows[0];
@@ -498,9 +537,13 @@ exports.putBill = function (request, response) {
                                 {
                                     response.status(400)
                                     response.json();
+                                    var total=new Date().getTime()-start;
+                                    client.timing('putBill_fail', total);
                                 }
                                 response.status(200)                            
                                 response.json(origindata)
+                                var total=new Date().getTime()-start;
+                                client.timing('putBill_success', total);
                                 return
                             });
                             
@@ -512,6 +555,8 @@ exports.putBill = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('putBill_fail', total);
                         return
                     }                    
                 })                
@@ -520,6 +565,8 @@ exports.putBill = function (request, response) {
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('putBill_fail', total);
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -531,10 +578,15 @@ exports.putBill = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.deleteBill = function (request, response) {    
+    client.increment('deleteBillCall');
+    var start=new Date().getTime()
     var credentials = auth(request)
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('deleteBill_fail', total);
+        return
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -548,6 +600,9 @@ exports.deleteBill = function (request, response) {
                         //server error...
                         response.status(400)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('deleteBill_fail', total);
+                        return
                         //// console.log('Comparison error: ', err);
                     }
                     if(res){
@@ -559,6 +614,8 @@ exports.deleteBill = function (request, response) {
                             if(data.rows[0]==undefined){
                                 response.status(404);
                                 response.json();
+                                var total=new Date().getTime()-start;
+                                client.timing('deleteBill_fail', total);
                                 return;
                             }
                             else{
@@ -583,6 +640,8 @@ exports.deleteBill = function (request, response) {
                                     query(sql).then(function (data) {
                                         response.status(204)                            
                                         response.json()
+                                        var total=new Date().getTime()-start;
+                                        client.timing('deleteBill_fail', total);
                                         return
                                 })      
                                 })
@@ -597,6 +656,8 @@ exports.deleteBill = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('deleteBill_fail', total);
                         return
                     }                    
                 })                
@@ -605,6 +666,9 @@ exports.deleteBill = function (request, response) {
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('deleteBill_fail', total);
+                return
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -617,6 +681,8 @@ exports.deleteBill = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.postAttachment = function (request, response) {
+    client.increment('postAttachmentCall');
+    var start=new Date().getTime()
     var formidable = require("formidable")
     var form = new formidable.IncomingForm();
     form.maxFieldsSize = 10 * 1024 * 1024; //10 M maxinum
@@ -629,11 +695,15 @@ exports.postAttachment = function (request, response) {
         if(err){
             response.status(400);
             response.json("");
+            var total=new Date().getTime()-start;
+            client.timing('postAttachment_fail', total);
             return
         }
         if(file.files==undefined){
             response.status(400);
             response.json("");
+            var total=new Date().getTime()-start;
+            client.timing('postAttachment_fail', total);
             return
         }
         //console.log(file);
@@ -658,6 +728,8 @@ exports.postAttachment = function (request, response) {
             var err = new Error('type of file error');
             response.status(400);
             response.json("");
+            var total=new Date().getTime()-start;
+            client.timing('postAttachment_fail', total);
         } else {
             //以当前时间戳对上传文件进行重命名
                         
@@ -678,6 +750,9 @@ exports.postAttachment = function (request, response) {
             if (!credentials) {
                 response.statusCode = 401
                 response.json();
+                var total=new Date().getTime()-start;
+                client.timing('postAttachment_fail', total);
+                return
             } else {
                 //user existance check
                 query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -691,6 +766,9 @@ exports.postAttachment = function (request, response) {
                                 //server error...
                                 response.status(400)
                                 response.json("")
+                                var total=new Date().getTime()-start;
+                                client.timing('postAttachment_fail', total);
+                                return
                                 //// console.log('Comparison error: ', err);
                             }
                             if(res){
@@ -708,7 +786,7 @@ exports.postAttachment = function (request, response) {
                                             //     response.json()
                                             //     return
                                             // } 
-                                            console.log(s3File.upload(filePath,fileName))
+                                            logger.debug(s3File.upload(filePath,fileName))
                                             const sql=`INSERT INTO \`attachment\`(\`id\`, \`file_name\`, \`url\`,\`MD5\`,\`lastModifiedDate\`,\`SIZE\`) VALUES ('${newid}','${originname}','${fileName}','${MD5}','${modified}','${size}')`
                                             // console.log(sql)
                                             
@@ -718,6 +796,8 @@ exports.postAttachment = function (request, response) {
                                                                                                         
                                                         response.status(201)                                                    
                                                         response.json(data.rows[0])
+                                                        var total=new Date().getTime()-start;
+                                                        client.timing('postAttachment_success', total);
                                                         return
                                                     }).catch(renderErrorResponse)
                                                 }).catch(renderErrorResponse)                                              
@@ -726,7 +806,9 @@ exports.postAttachment = function (request, response) {
                                         }
                                         else{
                                             response.status(400)
-                                            response.json("") 
+                                            response.json("")
+                                            var total=new Date().getTime()-start;
+                                            client.timing('postAttachment_fail', total);
                                             return
                                         }
                                                            
@@ -735,6 +817,8 @@ exports.postAttachment = function (request, response) {
                                     else{
                                         response.status(404)
                                         response.json("")
+                                        var total=new Date().getTime()-start;
+                                        client.timing('postAttachment_fail', total);
                                         return
                                     }
 
@@ -745,6 +829,8 @@ exports.postAttachment = function (request, response) {
                                 //password wrong
                                 response.status(401)
                                 response.json()
+                                var total=new Date().getTime()-start;
+                                client.timing('postAttachment_fail', total);
                                 return
                             }                    
                         })                
@@ -753,6 +839,8 @@ exports.postAttachment = function (request, response) {
                     else{
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('postAttachment_fail', total);
                         return
                     }            
                 }).catch(renderErrorResponse(response));
@@ -774,12 +862,16 @@ exports.postAttachment = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.getBillAttachment = function (request, response) {
-    
+    client.increment('getBillAttachmentCall');
+    var start=new Date().getTime()
     var credentials = auth(request)
     
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('getBillAttachment_fail', total);
+        return
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -793,6 +885,9 @@ exports.getBillAttachment = function (request, response) {
                         //server error...
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('getBillAttachment_fail', total);
+                        return
                         //// console.log('Comparison error: ', err);
                         //
                     }
@@ -805,11 +900,15 @@ exports.getBillAttachment = function (request, response) {
                             if(data.rows[0]==undefined){
                                 response.status(404);
                                 response.json();
+                                var total=new Date().getTime()-start;
+                                client.timing('getBillAttachment_fail', total);
                                 return;
                             }
                             else{
                                 response.status(200)                                              
                                 response.json(data.rows[0])
+                                var total=new Date().getTime()-start;
+                                client.timing('getBillAttachment_success', total);
                                 return
                             }
                             
@@ -822,6 +921,8 @@ exports.getBillAttachment = function (request, response) {
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('getBillAttachment_success', total);
                         return
                     }                    
                 })                
@@ -830,6 +931,8 @@ exports.getBillAttachment = function (request, response) {
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('getBillAttachment_success', total);
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -842,12 +945,17 @@ exports.getBillAttachment = function (request, response) {
  * @param {response} {HTTP response object}
  */
 exports.deleteBillAttachment = function(request, response){
-    
+    client.increment('deleteBillAttachmentCall');
+    var start=new Date().getTime();
+
     var credentials = auth(request)
     
     if (!credentials) {
         response.statusCode = 401
         response.json();
+        var total=new Date().getTime()-start;
+        client.timing('deleteBillAttachment_fail', total);
+        return
     } else {
         //user existance check
         query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
@@ -861,6 +969,8 @@ exports.deleteBillAttachment = function(request, response){
                         //server error...
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('deleteBillAttachment_fail', total);
                         //// console.log('Comparison error: ', err);
                         //
                     }
@@ -873,6 +983,8 @@ exports.deleteBillAttachment = function(request, response){
                             if(data.rows[0]==undefined){
                                 response.status(404);
                                 response.json();
+                                var total=new Date().getTime()-start;
+                                client.timing('deleteBillAttachment_fail', total);
                                 return;
                             }
                             else{
@@ -881,6 +993,8 @@ exports.deleteBillAttachment = function(request, response){
                                 query(`DELETE FROM attachment WHERE id='${data.rows[0].id}'`).then(function(){
                                     response.status(204)                                              
                                     response.json(data.rows[0])
+                                    var total=new Date().getTime()-start;
+                                    client.timing('deleteBillAttachment_success', total);
                                     return
                                 }).catch(renderErrorResponse)                                
                                 return
@@ -895,6 +1009,8 @@ exports.deleteBillAttachment = function(request, response){
                         //password wrong
                         response.status(401)
                         response.json()
+                        var total=new Date().getTime()-start;
+                        client.timing('deleteBillAttachment_fail', total);
                         return
                     }                    
                 })                
@@ -903,6 +1019,8 @@ exports.deleteBillAttachment = function(request, response){
             else{
                 response.status(401)
                 response.json()
+                var total=new Date().getTime()-start;
+                client.timing('deleteBillAttachment_fail', total);
             }            
         }).catch(renderErrorResponse(response));
     }
@@ -916,6 +1034,7 @@ exports.deleteBillAttachment = function(request, response){
 let renderErrorResponse = (response) => {
     const errorCallback = (error) => {
         if (error) {
+            logger.error(error.message)
             response.status(500);
             response.json({
                 message: error.message
