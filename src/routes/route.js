@@ -13,9 +13,14 @@ module.exports = function (app) {
         })
     //  Routes for search and create.
     app.route('/v1/user/self')
+    .get(controller.userGet)
+    .put(controller.userUpdate)
+    .post(controller.userCreate)   
+    app.route('/v2/user/self')
         .get(controller.userGet)
         .put(controller.userUpdate)
         .post(controller.userCreate)    
+        
     app.route('/v1/bills')
         .get(controller.getBills)
     app.route('/v4/bills')
