@@ -5,6 +5,10 @@
 module.exports = function (app) {
     const controller = require('../controllers/controller');
     //  Routes for search and create.
+    app.route('/v1/user/self')
+    .get(controller.userGet)
+    .put(controller.userUpdate)
+    .post(controller.userCreate)   
     app.route('/v2/user/self')
         .get(controller.userGet)
         .put(controller.userUpdate)
