@@ -1,7 +1,5 @@
 const mysql=require("mysql")
 const logger=require("./src/log/logcontroller")
-
-var async = require('async');
 var con = mysql.createConnection({
     host: process.env.DBHost || "localhost",
     user: process.env.DBUser || "majun",
