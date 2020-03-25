@@ -19,6 +19,7 @@
   "homepage": "",
   "devDependencies": {},
   "dependencies": {
+    "async": "^3.2.0",
     "aws-sdk": "^2.624.0",
     "basic-auth": "^2.0.1",
     "bcrypt": "^3.0.7",
