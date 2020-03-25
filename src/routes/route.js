@@ -2,8 +2,15 @@
  * endpoint route definitions.
  */
 'use strict';
+const logger=require("../log/logcontroller")
 module.exports = function (app) {
     const controller = require('../controllers/controller');
+    app.route('')
+        .get( function (request, response) {
+            logger.debug("test connect")
+            response.status=200
+            response.json()
+        })
     //  Routes for search and create.
     app.route('/v1/user/self')
         .get(controller.userGet)

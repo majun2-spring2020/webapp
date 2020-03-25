@@ -18,6 +18,7 @@ var auth = require('basic-auth')
  */
 exports.userCreate = function (request, response) {
     client.increment('userCreateCall');
+    logger.info('userCreateCall')
     var start=new Date().getTime();
     var email=request.body.email_address;
     //regular check for email address
@@ -84,6 +85,7 @@ exports.userCreate = function (request, response) {
  */
 exports.userGet = function (request, response) {
     client.increment('userGetCall');
+    logger.info('userGetCall')
     var start=new Date().getTime();
     var credentials = auth(request)
 
@@ -150,6 +152,7 @@ exports.userGet = function (request, response) {
 exports.userUpdate = function (request, response) {
     //seperate parameters
     client.increment('userUpdateCall');
+    logger.info('userUpdateCall')
     var start=new Date().getTime();
     var strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})");
     if(!strongRegex.test(String(request.body.password)))
@@ -225,6 +228,7 @@ exports.userUpdate = function (request, response) {
  */
 exports.getBills = function (request, response) {
     client.increment('getBillsCall');
+    logger.info('getBillsCall')
     var start=new Date().getTime();
     var credentials = auth(request)
     
@@ -297,6 +301,7 @@ exports.getBills = function (request, response) {
  */
 exports.createBill = function (request, response) {
     client.increment('createBillCall');
+    logger.info('createBillCall')
     var start=new Date().getTime();
     var credentials = auth(request)
     
@@ -385,6 +390,7 @@ exports.createBill = function (request, response) {
  */
 exports.getBill = function (request, response) {
     client.increment('getBillCall');
+    logger.info('getBillCall')
     var start=new Date().getTime()
     var credentials = auth(request)
     
@@ -463,6 +469,7 @@ exports.getBill = function (request, response) {
  */
 exports.putBill = function (request, response) {
     client.increment('putBillCall');
+    logger.info('putBillCall')
     var start=new Date().getTime()
     var credentials = auth(request)
     if(!(request.body.paymentStatus=="paid" || request.body.paymentStatus=="due" || request.body.paymentStatus=="no_payment_required" || request.body.paymentStatus=="past_due" || request.body.paymentStatus=="" ||request.body.paymentStatus==null)){
@@ -579,6 +586,7 @@ exports.putBill = function (request, response) {
  */
 exports.deleteBill = function (request, response) {    
     client.increment('deleteBillCall');
+    logger.info('deleteBillCall')
     var start=new Date().getTime()
     var credentials = auth(request)
     if (!credentials) {
@@ -682,6 +690,7 @@ exports.deleteBill = function (request, response) {
  */
 exports.postAttachment = function (request, response) {
     client.increment('postAttachmentCall');
+    logger.info('postAttachmentCall')
     var start=new Date().getTime()
     var formidable = require("formidable")
     var form = new formidable.IncomingForm();
@@ -863,6 +872,7 @@ exports.postAttachment = function (request, response) {
  */
 exports.getBillAttachment = function (request, response) {
     client.increment('getBillAttachmentCall');
+    logger.info('getBillAttachmentCall')
     var start=new Date().getTime()
     var credentials = auth(request)
     
@@ -946,6 +956,7 @@ exports.getBillAttachment = function (request, response) {
  */
 exports.deleteBillAttachment = function(request, response){
     client.increment('deleteBillAttachmentCall');
+    logger.info('deleteBillAttachmentCall')
     var start=new Date().getTime();
 
     var credentials = auth(request)
