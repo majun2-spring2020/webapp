@@ -21,6 +21,7 @@ exports.receiveMessage=function(params){
             logger.error("Receive Error", err);
         } 
         else if (data.Messages) {
+            logger.debug("a data from sqs")
             for(let message in data.Messages){
                 var deleteParams = {
                     QueueUrl: process.env.QueueURL,
