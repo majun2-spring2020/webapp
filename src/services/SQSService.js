@@ -23,7 +23,7 @@ exports.receiveMessage=function(params){
         else if (data.Messages) {
             for(let message in data.Messages){
                 var deleteParams = {
-                    QueueUrl: process.env.Queue,
+                    QueueUrl: process.env.QueueURL,
                     ReceiptHandle: message.ReceiptHandle
                 };
                 var email=message.MessageAttributes.email.StringValue

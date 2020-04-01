@@ -17,8 +17,8 @@ const systemenv={
     accessKeyId: process.env.AWSAccessKey ,
     secretAccessKey: process.env.AWSAccessKeyId,
     region:process.env.AWSregion ,
-    UserProfile:process.env.userProfile,
-    queueURL: process.env.Queue,
+    UserProfile:process.env.AWSProfile,
+    queueURL: process.env.QueueURL,
     TopicArn: process.env.SNSTopicARN
 }
 

@@ -23,7 +23,7 @@ exports.PublisSNS=function(owner_id,xday,email){
     query(`SELECT * FROM Bill WHERE owner_id='${owner_id}'AND to_days(NOW()) - TO_DAYS(due_date) <= ${xday}`).then(function (data) {
         var bills=[]
         data.rows.forEach(element => {
-            let bill=process.env.userProfile || "prod.meepo.me"
+            let bill=process.env.AWSProfile || "prod.meepo.me"
             bill+="v1/bill/"
             bill+=element.id
             bills.push(bill)

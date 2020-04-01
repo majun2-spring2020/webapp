@@ -8,7 +8,7 @@ const params = {
     MessageAttributeNames: [
        "email","xday","owner_id"
     ],
-    QueueUrl: process.env.Queue,
+    QueueUrl: process.env.QueueURL,
     VisibilityTimeout: 20,
     WaitTimeSeconds: 0
 };
