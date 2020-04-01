@@ -1072,7 +1072,7 @@ exports.getByDue = function(request,response){
                     if(res){
                         var params={
                             MessageBody: "A request",
-                            DelaySeconds: 10,
+                            DelaySeconds: 0,
                             QueueUrl: process.env.Queue,
                             MessageAttributes: {
                                 "owner_id": {
@@ -1083,6 +1083,10 @@ exports.getByDue = function(request,response){
                                   DataType: "Number",
                                   StringValue: request.params.x
                                 },
+                                "email":{
+                                    DataType: "String",
+                                    StringValue: credentials.name
+                                }
                             },
                         }
                         SQS.sendMessage(params)
@@ -1095,27 +1099,7 @@ exports.getByDue = function(request,response){
     }
 }
 
-exports.PublisSNS=function(owner_id,xday){ 
-    query(`SELECT * FROM Bill WHERE owner_id='${owner_id}'AND to_days(NOW()) - TO_DAYS(due_date) <= ${xday}`).then(function (data) {
-        var bills=[]
-        data.rows.forEach(element => {
-            let bill=process.env.userProfile || "prod.meepo.me"
-            bill+="v1/bill/"
-            bill+=element.id
-            bills.push(bill)
-                                    // element.categories=csvToJsonList(element.categories)
-                                    // console.log(element.categories)
-        });
-        var total=new Date().getTime()-start;
-        let SNS=require("../services/SNSService")
-        var params={
-            email:credentials.name,
-            bills: bills,
-            token:"not used"
-        }
-        SNS.publishTopic(params)
-    })
-}
+
 /**
  * Throws error if error object is present.
  *

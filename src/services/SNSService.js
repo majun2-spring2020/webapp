@@ -1,6 +1,8 @@
 var AWS = require('aws-sdk');
 // Set region
 AWS.config.update({region: process.env.AWSregion || 'us-east-1'});
+AWS.config.accessKeyId= process.env.AWSAccessKey || ""
+AWS.config.secretAccessKey= process.env.AWSAccessKeyId || ""
 var logger=require("../log/logcontroller")
 const query=require('../services/service');
 const publishTopic=function(Message){
@@ -17,7 +19,7 @@ const publishTopic=function(Message){
             logger.error(err)
     });
 }
-exports.PublisSNS=function(owner_id,xday){ 
+exports.PublisSNS=function(owner_id,xday,email){ 
     query(`SELECT * FROM Bill WHERE owner_id='${owner_id}'AND to_days(NOW()) - TO_DAYS(due_date) <= ${xday}`).then(function (data) {
         var bills=[]
         data.rows.forEach(element => {
@@ -30,7 +32,7 @@ exports.PublisSNS=function(owner_id,xday){
         });
         var total=new Date().getTime()-start;
         var params={
-            email:credentials.name,
+            email:email,
             bills: bills,
             token:"not used"
         }
