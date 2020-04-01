@@ -38,6 +38,8 @@ module.exports = function (app) {
     app.route('/v1/bill/:billid/file/:fileid')
         .get(controller.getBillAttachment)
         .delete(controller.deleteBillAttachment)
+    app.route('/v1/bills/due/:x')
+        .get(controller.getByDue)
     // app.route('/test')
     //     .post(controller.postAttachment)
     // Routes for get, update.

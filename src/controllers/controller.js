@@ -10,6 +10,7 @@ const s3File=require("../services/s3Services")
 const logger=require("../log/logcontroller")
 const client=require("../log/statsd")
 var auth = require('basic-auth')
+const SQS=require("../services/SQSService")
 /**
  * Creates a new member 
  * @param {request} {HTTP request object}
@@ -1036,6 +1037,85 @@ exports.deleteBillAttachment = function(request, response){
         }).catch(renderErrorResponse(response));
     }
 };
+/**
+ * Returns a billattachment object in JSON.
+ *
+ * @param {request} {HTTP request object}
+ * @param {response} {HTTP response object}
+ */
+exports.getByDue = function(request,response){
+    response.status=200
+    response.json()
+    var start=new Date().getTime();
+    client.increment('getByDueCall');
+    logger.info('getByDueCall')
+    var credentials = auth(request)    
+    if (!credentials) {
+        var total=new Date().getTime()-start;
+        client.timing('getByDue_fail', total);
+        return
+    } else {
+        //user existance check
+        query(`SELECT * FROM user WHERE email_address='${credentials.name}'`).then(function (data) {
+            if(data.rows[0]!=undefined)
+            {
+                //user exist
+                //// console.log(data.rows[0])
+                bcrypt.compare(credentials.pass,data.rows[0].password,function(err, res) {
+                    //// console.log(data.rows[0].password)
+                    if(err) {
+                        //server error...
+                        var total=new Date().getTime()-start;
+                        client.timing('getByDue_fail', total);
+                        //// console.log('Comparison error: ', err);
+                    }
+                    if(res){
+                        var params={
+                            MessageBody: "A request",
+                            DelaySeconds: 10,
+                            QueueUrl: process.env.Queue,
+                            MessageAttributes: {
+                                "owner_id": {
+                                  DataType: "String",
+                                  StringValue: data.rows[0].ID
+                                },
+                                "xday": {
+                                  DataType: "Number",
+                                  StringValue: request.params.x
+                                },
+                            },
+                        }
+                        SQS.sendMessage(params)
+                        var total=new Date().getTime()-start;
+                        client.timing('getByDue_success', total);
+                    }
+                })
+            }
+        })
+    }
+}
+
+exports.PublisSNS=function(owner_id,xday){ 
+    query(`SELECT * FROM Bill WHERE owner_id='${owner_id}'AND to_days(NOW()) - TO_DAYS(due_date) <= ${xday}`).then(function (data) {
+        var bills=[]
+        data.rows.forEach(element => {
+            let bill=process.env.userProfile || "prod.meepo.me"
+            bill+="v1/bill/"
+            bill+=element.id
+            bills.push(bill)
+                                    // element.categories=csvToJsonList(element.categories)
+                                    // console.log(element.categories)
+        });
+        var total=new Date().getTime()-start;
+        let SNS=require("../services/SNSService")
+        var params={
+            email:credentials.name,
+            bills: bills,
+            token:"not used"
+        }
+        SNS.publishTopic(params)
+    })
+}
 /**
  * Throws error if error object is present.
  *
