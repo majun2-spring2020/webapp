@@ -1073,7 +1073,7 @@ exports.getByDue = function(request,response){
                         var params={
                             MessageBody: "A request",
                             DelaySeconds: 0,
-                            QueueUrl: process.env.Queue,
+                            QueueUrl: process.env.QueueURL,
                             MessageAttributes: {
                                 "owner_id": {
                                   DataType: "String",
@@ -1089,9 +1089,9 @@ exports.getByDue = function(request,response){
                                 }
                             },
                         }
-                        SQS.sendMessage(params)
-                        var total=new Date().getTime()-start;
-                        client.timing('getByDue_success', total);
+                        SQS.send(params)
+                        
+                        
                     }
                 })
             }

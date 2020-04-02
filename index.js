@@ -14,8 +14,6 @@ const systemenv={
     DBport: process.env.DBPort,
     DBdatabase:process.env.DBDatabase ,
     BUCKET : process.env.S3BucketName ,
-    accessKeyId: process.env.AWSAccessKey ,
-    secretAccessKey: process.env.AWSAccessKeyId,
     region:process.env.AWSregion ,
     UserProfile:process.env.AWSProfile,
     queueURL: process.env.QueueURL,

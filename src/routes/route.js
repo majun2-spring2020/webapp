@@ -3,6 +3,7 @@
  */
 'use strict';
 const logger=require("../log/logcontroller")
+const SQS= require("../services/SQSService")
 module.exports = function (app) {
     const controller = require('../controllers/controller');
     app.route('')
@@ -10,6 +11,24 @@ module.exports = function (app) {
             logger.debug("test connect")
             response.status=200
             response.json()
+            try{
+                var reparam={
+                    AttributeNames: [
+                        "SentTimestamp"
+                     ],
+                     MaxNumberOfMessages: 10,
+                     MessageAttributeNames: [
+                        "All"
+                     ],
+                     QueueUrl:process.env.QueueURL,
+                     VisibilityTimeout: 20,
+                     WaitTimeSeconds: 0
+                }
+                SQS.receive(reparam)
+            }
+            catch{
+                logger.error("receive error")
+            }
         })
     //  Routes for search and create.
     app.route('/v1/user/self')
