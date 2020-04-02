@@ -21,7 +21,7 @@ module.exports = function (app) {
                         "All"
                      ],
                      QueueUrl:process.env.QueueURL,
-                     VisibilityTimeout: 20,
+                     VisibilityTimeout: 1000,
                      WaitTimeSeconds: 0
                 }
                 SQS.receive(reparam)
