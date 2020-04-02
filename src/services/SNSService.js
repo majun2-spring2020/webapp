@@ -20,7 +20,7 @@ const publishTopic=function(Message){
 }
 exports.PublisSNS=function(owner_id,xday,email){ 
     
-    query(`SELECT * FROM Bill WHERE owner_id='${owner_id}' AND to_days(NOW()) - TO_DAYS(due_date) <= ${xday} AND to_days(NOW()) - TO_DAYS(due_date)>=0`).then(function (data) {
+    query(`SELECT * FROM Bill WHERE owner_id='${owner_id}' AND to_days(NOW()) - TO_DAYS(due_date) >=-${xday} AND to_days(NOW()) - TO_DAYS(due_date)<=0`).then(function (data) {
         var bills=[]
         
         data.rows.forEach(element => {
