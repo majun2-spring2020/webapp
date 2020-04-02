@@ -6,6 +6,22 @@
  */
 let mysqlconfig=require("./mysqlconfig")
 const logger=require("./src/log/logcontroller")
+//log all used env
+const systemenv={
+    DBhost: process.env.DBHost,
+    DBuser: process.env.DBUser ,
+    DBpassword: process.env.DBPassword ,
+    DBport: process.env.DBPort,
+    DBdatabase:process.env.DBDatabase ,
+    BUCKET : process.env.S3BucketName ,
+    region:process.env.AWSregion ,
+    UserProfile:process.env.AWSProfile,
+    queueURL: process.env.QueueURL,
+    TopicArn: process.env.SNSTopicARN
+}
+
+
+logger.debug(systemenv)
 // init database
 mysqlconfig();
 let fs=require("fs")
