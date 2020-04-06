@@ -1,13 +1,17 @@
 //this file is operation for mysql
 var mysql=require("mysql")
 var client=require("../log/statsd")
+const fs=require("fs")
 //mysql config
 var pool = mysql.createPool({
     host: process.env.DBHost || "localhost",
     user: process.env.DBUser || "majun",
     password: process.env.DBPassword || "qwer1234",
     port: process.env.DBport || 3306,
-    database: process.env.DBDatabase || "majun"
+    database: process.env.DBDatabase || "majun",
+    ssl  : {
+        ca : fs.readFileSync('./ssl/rds.pem')
+    }
 });
 /**
  * @param sql sentence for mysql
