@@ -1,11 +1,27 @@
 const mysql=require("mysql")
 const logger=require("./src/log/logcontroller")
-var con = mysql.createConnection({
-    host: process.env.DBHost || "localhost",
-    user: process.env.DBUser || "majun",
-    password: process.env.DBPassword || "qwer1234",
-    port: process.env.DBPort || 3306,
-});
+const fs=require("fs")
+if(process.env.DBHost){
+    var con = mysql.createConnection({
+        host: process.env.DBHost || "localhost",
+        user: process.env.DBUser || "majun",
+        password: process.env.DBPassword || "qwer1234",
+        port: process.env.DBPort || 3306,
+        ssl  : {
+            ca : fs.readFileSync('./ssl/rds.pem')
+        }
+    });
+}
+else{
+    var con = mysql.createConnection({
+        host:  "localhost",
+        user:  "majun",
+        password:  "qwer1234",
+        port:  3306
+    });
+}
+
+
 const database=process.env.DBDatabase || "majun"
 module.exports=function(){
     logger.debug("bootstrap")
